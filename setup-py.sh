@@ -36,7 +36,13 @@ while test $# -gt 0; do
     shift
 done
 
+echo "zom0 $(which pip)"
+echo "zom1 $(pip --version)"
+echo "zom2 $(pwd)"
 pip install .           \
     --root $FAKEROOT    \
     --no-deps           \
     --prefix $PREFIX
+
+set +e
+pip show cwrap

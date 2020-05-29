@@ -27,9 +27,10 @@ def shell(cmd, sudo = False):
     prompt = '[{}]>'.format(os.getcwd())
     print(prompt, ' '.join(cmdlist))
 
-    try: 
-        return subprocess.check_output(tuple(filter(None, cmdlist)))
+    try:
+        x = subprocess.check_output(tuple(filter(None, cmdlist)), stderr=subprocess.STDOUT)
+        print(x)
+        return x
     except subprocess.CalledProcessError as e:
         print(e.output, file=sys.stderr)
-        raise
-     
+        sys.exit(1)

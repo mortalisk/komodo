@@ -28,21 +28,11 @@ def checkoutGitBranch(_GIT_EXEC, _GIT_REF) {
     """
 }
 
-def buildPythonEnv(_ENV_EXEC, _TARGET_ENV, _ENV_ARGS, _PIP_EXPRESSION) {
+def installKomodo(_BUILD_PYTHON, _BUILD_PYTHON_ENV) {
     sh """
-        $_ENV_EXEC $_TARGET_ENV $_ENV_ARGS
-        source $_TARGET_ENV/bin/activate
-        python -m pip install --upgrade '$_PIP_EXPRESSION'
-    """
-}
-
-def installKomodo(_PYTHON_ENV) {
-    sh """
-        source $_PYTHON_ENV
-        pip install .
-        rm -rf komodo
-        rm -rf bin
-        python -c "import komodo; print(komodo.__file__)"
+        $_BUILD_PYTHON/bin/python3 -m venv $_BUILD_PYTHON_ENV
+        $_BUILD_PYTHON_ENV/bin/python -m pip install .
+        $_BUILD_PYTHON_ENV/bin/python -c "import komodo; print(komodo.__file__)"
     """
 }
 
@@ -68,46 +58,37 @@ def copyScripts(_KOMODO_ROOT, _KOMODO_RELEASES_ROOT) {
     """
 }
 
-def validateRelease(_PYTHON_ENV, _KOMODO_RELEASES_ROOT, _PACKAGES, _REPOSITORY) {
+def validateRelease(_BUILD_PYTHON, _KOMODO_RELEASES_ROOT, _PACKAGES, _REPOSITORY) {
     sh """
-        source $_PYTHON_ENV
-        pushd $_KOMODO_RELEASES_ROOT 
+        pushd $_KOMODO_RELEASES_ROOT
 
         # lint first
-        python -m komodo.lint $_PACKAGES $_REPOSITORY
+        $_BUILD_PYTHON -m komodo.lint $_PACKAGES $_REPOSITORY
 
         # output maintainers
-        python -m komodo.maintainer $_PACKAGES $_REPOSITORY
+        $_BUILD_PYTHON -m komodo.maintainer $_PACKAGES $_REPOSITORY
 
         popd
     """
 }
 
-def buildAndInstallRelease(_REPOSITORY, _RELEASE_FILE, _RELEASE_NAME, _KOMODO_RELEASES_ROOT, _PREFIX, _PIPELINE_STEPS, _DEVTOOLSET, _PYTHON_ENV, _CMAKE_EXECUTABLE, _GIT_EXEC, _PERMISSIONS_EXEC) {
-    _PIP = sh(
-        script: """
-            source $_PYTHON_ENV
-            which pip
-        """,
-        returnStdout: true
-    ).trim()
+def buildAndInstallRelease(_BUILD_PYTHON, _REPOSITORY, _RELEASE_FILE, _RELEASE_NAME, _KOMODO_RELEASES_ROOT, _PREFIX, _PIPELINE_STEPS, _DEVTOOLSET, _PIP_EXEC, _CMAKE_EXECUTABLE, _GIT_EXEC, _PERMISSIONS_EXEC) {
     sh """
         source $_DEVTOOLSET
-        source $_PYTHON_ENV
         set -xe
 
         pushd $_KOMODO_RELEASES_ROOT
-        kmd $_RELEASE_FILE $_REPOSITORY                       \
-            --jobs 6                                          \
-            --release $_RELEASE_NAME                          \
-            --tmp tmp                                         \
-            --cache cache                                     \
-            --prefix $_PREFIX                                 \
-            --cmake $_CMAKE_EXECUTABLE                        \
-            --pip $_PIP                                       \
-            --git $_GIT_EXEC                                  \
-            --postinst $_PERMISSIONS_EXEC                     \
-            $_PIPELINE_STEPS                                  \
+        $_BUILD_PYTHON -m komodo.cli $_RELEASE_FILE $_REPOSITORY \
+            --jobs 6                                             \
+            --release $_RELEASE_NAME                             \
+            --tmp tmp                                            \
+            --cache cache                                        \
+            --prefix $_PREFIX                                    \
+            --cmake $_CMAKE_EXECUTABLE                           \
+            --pip $_PIP_EXEC                                     \
+            --git $_GIT_EXEC                                     \
+            --postinst $_PERMISSIONS_EXEC                        \
+            $_PIPELINE_STEPS                                     \
 
         popd
     """
@@ -139,15 +120,13 @@ def call(args) {
             PIPELINE_STEPS = "${args.deploy == "true" ? "--download --build --install" : "--dry-run --download --build"}"
             PY_VER_MAJOR = "${args.python_version.split("\\.")[0]}"
             PY_VER_MINOR = "${args.python_version.split("\\.")[1]}"
-            RELEASE_NAME = "${args.release_base + "-py" + env.PY_VER_MAJOR + env.PY_VER_MINOR}"
+            RELEASE_NAME = "${args.release_base}-py${env.PY_VER_MAJOR}${env.PY_VER_MINOR}"
             RELEASE_FILE = "releases/${env.RELEASE_NAME}.yml"
             REPOSITORY = "repository.yml"
-            ENV_EXEC = "${args.build_python + "/bin/" + (env.PY_VER_MAJOR == "2" ? "virtualenv" : "python3 -m venv")}"
-            ENV_ARGS = "${(env.PY_VER_MAJOR == "2" ? "--no-download" : " ")}"
-            BUILD_ENV = "${env.WORKSPACE + "/build-env"}"
-            PYTHON_ENV = "${env.BUILD_ENV + "/bin/activate"}"
+            BUILD_ENV_DIR = "${env.WORKSPACE}/build-env"
+            BUILD_PYTHON = "${env.BUILD_ENV_DIR}/bin/python"
             KOMODO_ROOT = "${env.WORKSPACE}"
-            KOMODO_RELEASES_ROOT = "${env.WORKSPACE + "/komodo-releases"}"
+            KOMODO_RELEASES_ROOT = "${env.WORKSPACE}/komodo-releases"
         }
         stages {
             stage('Already deployed') {
@@ -176,17 +155,10 @@ def call(args) {
                     }
                 }
             }
-            stage('Build Python env') {
-                steps {
-                    script {
-                        buildPythonEnv(env.ENV_EXEC, env.BUILD_ENV, env.ENV_ARGS, env.PIP_EXPRESSION)
-                    }
-                }
-            }
             stage('Install Komodo') {
                 steps {
                     script {
-                        installKomodo(env.PYTHON_ENV)
+                        installKomodo(args.build_python, env.BUILD_ENV_DIR)
                     }
                 }
             }
@@ -207,7 +179,7 @@ def call(args) {
             stage('Validate release') {
                 steps {
                     script {
-                        validateRelease(env.PYTHON_ENV, env.KOMODO_RELEASES_ROOT, env.RELEASE_FILE, env.REPOSITORY)
+                        validateRelease(env.BUILD_PYTHON, env.KOMODO_RELEASES_ROOT, env.RELEASE_FILE, env.REPOSITORY)
                     }
                 }
             }
@@ -217,7 +189,8 @@ def call(args) {
                         System.setProperty("org.jenkinsci.plugins.durabletask.BourneShellScript.HEARTBEAT_CHECK_INTERVAL", "80000");
                     }
                     script {
-                        buildAndInstallRelease(env.REPOSITORY, env.RELEASE_FILE, env.RELEASE_NAME, env.KOMODO_RELEASES_ROOT, env.PREFIX, env.PIPELINE_STEPS, env.DEVTOOLSET, env.PYTHON_ENV, env.CMAKE_EXECUTABLE, env.GIT_EXEC, env.PERMISSIONS_EXEC)
+                        PIP_EXEC = "${args.target_python}/bin/pip"
+                        buildAndInstallRelease(env.BUILD_PYTHON, env.REPOSITORY, env.RELEASE_FILE, env.RELEASE_NAME, env.KOMODO_RELEASES_ROOT, env.PREFIX, env.PIPELINE_STEPS, env.DEVTOOLSET, PIP_EXEC, env.CMAKE_EXECUTABLE, env.GIT_EXEC, env.PERMISSIONS_EXEC)
                     }
                 }
             }

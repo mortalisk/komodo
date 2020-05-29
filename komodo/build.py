@@ -74,8 +74,8 @@ def cmake(pkg, ver, path, prefix, builddir,
     with pushd(bdir):
         print('Installing {} ({}) from source with cmake'.format(pkg, ver))
         shell([cmake, path] + flags + [makeopts])
-        print(shell('make -j{}'.format(jobs)))
-        print(shell('make DESTDIR={} install'.format(fakeroot)))
+        shell('make -j{}'.format(jobs))
+        shell('make DESTDIR={} install'.format(fakeroot))
 
 def sh(pkg, ver, pkgpath, prefix, makefile, *args, **kwargs):
     if os.path.isfile(makefile):
@@ -106,6 +106,7 @@ def pip_install(pkg, ver, pkgpath, prefix, dlprefix, pip='pip', *args, **kwargs)
            'install {}=={}'.format(pkg, komodo.strip_version(ver)),
            '--root {}'.format(kwargs['fakeroot']),
            '--prefix {}'.format(prefix),
+           '--force-reinstall',
            '--no-index',
            '--no-deps',
            '--find-links {}'.format(dlprefix),
@@ -113,6 +114,7 @@ def pip_install(pkg, ver, pkgpath, prefix, dlprefix, pip='pip', *args, **kwargs)
 
     print('Installing {} ({}) from pip'.format(pkg, ver))
     shell(cmd)
+    shell([pip, "show", pkg])
 
 def pypaths(prefix, version):
     if version is None: return ''
@@ -156,6 +158,7 @@ def make(pkgfile, repofile, prefix = None,
                                            [os.path.join(fakeprefix, 'lib'),
                                             os.path.join(fakeprefix, 'lib64'),
                                             os.environ.get('LD_LIBRARY_PATH')]))
+    print("PYTHONPATH: '{}'".format(os.environ["PYTHONPATH"]))
     extra_makeopts = os.environ.get('extra_makeopts')
 
     pkgpaths = ['{}-{}'.format(pkg, pkgs[pkg]) for pkg in pkgorder]

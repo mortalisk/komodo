@@ -6,5 +6,6 @@ komodo(
     deploy: env.deploy,
     python_version: env.PYTHON_VERSION,
     release_base: env.RELEASE_BASE,
-    build_python: "${env.PYTHON_VERSION == "2.7" ? env.BUILD_PYTHON_VERSION_27 : env.BUILD_PYTHON_VERSION_36}",
+    build_python: env.BUILD_PYTHON_VERSION_36,
+    target_python: "${PYTHON_VERSION == "2.7" ? env.BUILD_PYTHON_VERSION_27 : env.BUILD_PYTHON_VERSION_36}",
 )
