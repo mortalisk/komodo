@@ -108,7 +108,7 @@ def fetch(pkgfile, repofile, outdir = None, pip = 'pip', git = 'git'):
 
             if ext in ['tgz', 'tar.gz', 'tar.bz2', 'tar.xz']:
                 print('Extracting {} ...'.format(dst))
-                topdir = shell(' tar -xvf {}'.format(dst)).decode("utf-8").split()[0]
+                topdir = shell(' tar -xvf {}'.format(dst)).split()[0]
                 normalised_dir = topdir.split('/')[0]
 
                 if not os.path.exists(pkgname):

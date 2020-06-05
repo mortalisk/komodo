@@ -51,7 +51,7 @@ def _main(args):
                            '-D komodo_prefix={}'.format(tmp_prefix),
                            '-D komodo_pyver={}'.format(args.pyver),
                            '-D komodo_release={}'.format(args.release),
-                           tmpl]).decode("utf-8"))
+                           tmpl]))
 
     releasedoc = os.path.join(args.release, args.release)
     with open(args.pkgs) as p, open(args.repo) as r, open(releasedoc, 'w') as y:
