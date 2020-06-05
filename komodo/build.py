@@ -93,7 +93,7 @@ def sh(pkg, ver, pkgpath, prefix, makefile, *args, **kwargs):
         cmd.append(kwargs.get('makeopts'))
 
         print('Installing {} ({}) from sh'.format(pkg, ver))
-        shell(cmd)
+        print(shell(cmd))
 
 def rsync(pkg, ver, pkgpath, prefix, *args, **kwargs):
     print('Installing {} ({}) with rsync'.format(pkg, ver))
