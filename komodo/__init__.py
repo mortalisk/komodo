@@ -33,6 +33,9 @@ def fixup_python_shebangs(prefix, release):
     binpath = os.path.join(prefix, release, 'root', 'bin')
     python_ = os.path.join(binpath, 'python')
 
+    if not os.path.isdir(binpath):
+        return
+
     bins_ = []
     # executables with wrong shebang
     for bin_ in os.listdir(binpath):
