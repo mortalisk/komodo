@@ -34,10 +34,12 @@ def dfs(pkg, version, pkgs, repo):
 
 def rpm(pkg, ver, path, prefix, *args, **kwargs):
     # cpio always outputs to cwd, can't be overriden with switches
-    with pushd(prefix):
+    with pushd(kwargs['fakeroot']+prefix):
         print('Installing {} ({}) from rpm'.format(pkg, ver))
-        shell('rpm2cpio {}.rpm | cpio -imd --quiet'.format(path))
-        shell('rsync -a usr/* .')
+        ps = subprocess.Popen(('rpm2cpio', '{}.rpm'.format(path)), stdout=subprocess.PIPE)
+        output = subprocess.check_output(('cpio', '-imd', '--quiet'), stdin=ps.stdout)
+        ps.wait()
+        shell('rsync -a --ignore-missing-args usr/bin usr/include usr/lib usr/lib64 usr/share .')
         shell('rm -rf usr')
 
 
