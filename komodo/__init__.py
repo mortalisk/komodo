@@ -31,6 +31,8 @@ def fixup_python_shebangs(prefix, release):
 
     """
     binpath = os.path.join(prefix, release, 'root', 'bin')
+    if not os.path.isdir(binpath):
+        return
     python_ = os.path.join(binpath, 'python')
 
     bins_ = []
