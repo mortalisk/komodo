@@ -51,6 +51,9 @@ def grab(path, filename = None, version = None, protocol = None,
     elif protocol in ('rsync'):
         shell('rsync -a {}/ {}'.format(path, filename))
 
+    elif protocol in ('copy'):
+        shell('cp {} {}'.format(path, filename))
+
     elif protocol in ('pypi'):
         shell([pip, 'download',
                     '--dest .',
@@ -82,6 +85,8 @@ def fetch(pkgfile, repofile, outdir = None, pip = 'pip', git = 'git'):
     for pkg, ver in pkgs.items():
         print(pkg, ver)
         url = repo[pkg][ver]['source']
+        if url == "builtin":
+            continue
         pkgname = '{}-{}'.format(pkg, ver)
         dst = pkgname
 

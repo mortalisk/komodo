@@ -100,6 +100,10 @@ def rsync(pkg, ver, pkgpath, prefix, *args, **kwargs):
     # assume a root-like layout in the pkgpath dir, and just copy it
     shell(['rsync -am', kwargs.get('makeopts'), '{}/'.format(pkgpath), kwargs['fakeroot'] + prefix])
 
+def symlink(pkg, ver, pkgpath, prefix, *args, **kwargs):
+    fakeroot = kwargs['fakeroot']
+    fakeprefix = fakeroot + prefix
+    shell(["ln", "-s", pkgpath, os.path.join(fakeprefix, kwargs.get('makeopts'))])
 
 def pip_install(pkg, ver, pkgpath, prefix, dlprefix, pip='pip', *args, **kwargs):
     cmd = [pip,
@@ -166,12 +170,14 @@ def make(pkgfile, repofile, prefix = None,
     def resolve(x):
         return x.replace('$(prefix)', prefix)
 
-    build = { 'rpm': rpm, 'cmake': cmake, 'sh': sh, 'pip': pip_install, 'rsync': rsync }
+    build = { 'rpm': rpm, 'cmake': cmake, 'sh': sh, 'pip': pip_install, 'rsync': rsync, 'symlink': symlink }
 
     for pkg, path in zip(pkgorder, pkgpaths):
         ver = pkgs[pkg]
         current = repo[pkg][ver]
         make = current['make']
+        if make == "builtin":
+            continue
         pkgpath = os.path.abspath(path)
 
         if extra_makeopts:
