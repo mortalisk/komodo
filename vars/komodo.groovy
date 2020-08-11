@@ -67,16 +67,19 @@ def call(Map args = [:]) {
             string name: 'MATRIX_FILE_BASE', defaultValue: 'bleeding',
                 description: 'The matrix file that is to be built. I.e. bleeding or 2020.06.05. It is expected that there is a matrix file in komodo-release/releases/matrices/{base}.yml.'
 
+            string name: 'PREFIX', defaultValue: '/prog/res/komodo',
+                description: 'The install prefix.'
+
             booleanParam name: 'deploy', defaultValue: true,
                 description: 'Whether or not to deploy'
             booleanParam name: 'overwrite', defaultValue: false,
                 description: 'Whether or not to overwrite if build already exist'
 
-            string name: 'CODE_GIT_FORK', defaultValue: 'Equinor',
+            string name: 'CODE_GIT_FORK', defaultValue: 'equinor',
                 description: 'The fork to the get the komodo build system from'
             string name: 'CODE_GIT_REF', defaultValue: 'allow_no_python_package',
                 description: ' The branch to get the komodo build system from'
-            string name: 'CONFIG_GIT_FORK', defaultValue: 'Equinor',
+            string name: 'CONFIG_GIT_FORK', defaultValue: 'equinor',
                 description: 'The fork to get the the komodo releases from'
             string name: 'CONFIG_GIT_REF', defaultValue: 'rhel7-py2',
                 description: 'The branch to get the komodo releases from'
