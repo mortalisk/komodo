@@ -24,6 +24,14 @@ while test $# -gt 0; do
             shift
             export PYTHON=$1
             ;;
+        --pythonpath)
+            shift
+            export PYTHONPATH=$1
+            ;;
+        --pip)
+            shift
+            export PIP=$1
+            ;;
         *)
             export OPTS="$OPTS $1"
             ;;
@@ -44,7 +52,7 @@ python setup.py build_ext     \
        --include-dirs=$incdir
 python setup.py bdist_wheel
 
-pip install dist/*   \
+$PIP install dist/*   \
     --root $FAKEROOT \
     --no-deps        \
     --prefix $PREFIX
