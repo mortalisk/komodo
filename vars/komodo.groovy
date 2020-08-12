@@ -138,21 +138,26 @@ def call(Map args = [:]) {
                             // Transpile
                             sh "cd ${configPath}; ${komodoPath}/boot/kmd-env/bin/komodo-transpiler transpile --matrix-file=${matrixFile} --output releases"
 
+                            // Lint
+                            sh "cd ${configPath}; ${komodoPath}/boot/kmd-env/bin/komodo-lint releases/${releaseFile} repository.yml"
+
                             // Run!
                             withEnv(["TMPDIR=${configPath}/tmp"]) {
                                 sh """
                             cd ${configPath}
-                            ${komodoPath}/runkmd.sh                          \
-                                releases/${releaseFile}                      \
-                                repository.yml                               \
-                                --download                                   \
-                                --build                                      \
-                                ${params.deploy ? '--install' : '--dry-run'} \
-                                --jobs 6                                     \
-                                --release ${getReleaseName()}                \
-                                --tmp tmp                                    \
-                                --cache cache                                \
-                                --prefix ${params.PREFIX}                    \
+                            ${komodoPath}/runkmd.sh                                    \
+                                releases/${releaseFile}                                \
+                                repository.yml                                         \
+                                --download                                             \
+                                --build                                                \
+                                ${params.deploy ? '--install' : '--dry-run'}           \
+                                --jobs 6                                               \
+                                --release ${getReleaseName()}                          \
+                                --tmp tmp                                              \
+                                --cache cache                                          \
+                                --prefix ${params.PREFIX}                              \
+                                --pip ${komodoPath}/boot/build-env/bin/pip             \
+                                --virtualenv ${komodoPath}/boot/kmd-env/bin/virtualenv \
                                 --locations-config locations.yml
                             """
                             }
